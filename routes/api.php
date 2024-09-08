@@ -58,6 +58,7 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::post('/articles/stock', [ArticleController::class, 'addStockArticle']);
     Route::post('/articles/restaurer/{id}', [ArticleController::class, 'restore']);
     Route::post('/articles/libelle',[ArticleController::class,'getByLibelle']);
+    Route::post('/articles/stock/{id}', [ArticleController::class,'updateStock']);
     //Route::put('/articles',[ArticleController::class,'update']);
     //Route::delete('/articles', [ArticleController::class,'delete']);
     //Route::patch('/articles/{id}',[ArticleController::class, 'getByLibelle']);

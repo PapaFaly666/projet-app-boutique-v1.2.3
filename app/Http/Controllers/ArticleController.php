@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ArticleResource;
 use App\Models\Article;
+use App\Services\ArticleService;
+use App\Services\ArticleServiceImp;
 use App\Traits\ResponseTrait;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -52,6 +54,12 @@ use Illuminate\Http\Request;
 
 class ArticleController extends Controller
 {
+
+    protected $articleService;
+
+    public function __construct(ArticleServiceImp $articleServ){
+        $this->articleService = $articleServ;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -112,28 +120,13 @@ class ArticleController extends Controller
  * )
  */
 
-
+ 
  public function index(Request $request)
  {
-     $query = Article::query();
- 
-     if ($request->has('disponible')) {
-         $disponible = $request->query('disponible');
-         if ($disponible === 'oui') {
-             $query->where('qteStock', '>', 0);  // Filtre pour les articles disponibles
-         } elseif ($disponible === 'non') {
-             $query->where('qteStock', '=', 0);  // Filtre pour les articles non disponibles
-         }
-     }
- 
-     $articles = $query->get();
- 
-     if ($articles->isEmpty()) {
-         return $this->sendResponse(404, 'Pas d\'articles disponibles', null);
-     } else {
-         return $this->sendResponse(200, 'Liste des articles', ArticleResource::collection($articles));
-     }
+     $disponible = $request->query('disponible');
+     return ArticleResource::collection($this->articleService->getAllArticle($disponible));   
  }
+ 
  
 
 
@@ -197,43 +190,17 @@ class ArticleController extends Controller
  *     )
  * )
  */
-
     public function store(Request $request)
-    {
-
-        $request->validate([
-            'libelle' => 'required|string|max:100',
-            'prixUnitaire' => 'required|integer',
-            'qteStock' => 'required|integer',
-        ]);
-    
-        $existingArticle = Article::where('libelle', $request->input('libelle'))->first();
-    
-        if ($existingArticle) {
-
-            return $this->sendResponse(411, 'Le libellé existe déjà. Veuillez choisir un autre libellé.', null);
-        }
-    
-        $article = Article::create($request->all());
-    
-        return $this->sendResponse(200, 'Article ajouté avec succès', new ArticleResource($article));
+    {        
+        $response = $this->articleService->createArticle($request->all());
+        return new ArticleResource($response['data']);
     }
 
 
-    public function updateStock(Request $request, $id){
-        $request->validate([
-            'qteStock' => 'required|integer|min:1',
-        ]);
-
-        $article = Article::find($id);
-        if(!$article){
-            return $this->sendResponse(411, "Article not found",'null');
-        }
-
-        $article->qteStock = $request->input('qteStock');
-        $article->save();
-
-        return $this->sendResponse(200, "Stock mis à jour", new ArticleResource($article));
+    public function updateStock(Request $request, $id)
+    {
+        $response = $this->articleService->updateStockArticle($request->all(), $id);
+        return new ArticleResource($response['data']);
     }
     
 
@@ -298,17 +265,8 @@ class ArticleController extends Controller
  */
 
     public function getByLibelle(Request $request){
-        $request->validate([
-            'libelle' => 'required|string|max:100',
-        ]);
-
-        $libelle = $request->input('libelle');
-        $article = Article::where('libelle', $libelle)->first();
-        if(!$article){
-            return $this->sendResponse(411, "Article not found",'null');
-        }
-
-        return $this->sendResponse(200,"Article trouvé",new ArticleResource($article));
+        $response = $this->articleService->getByLibelleArticle($request->all());
+        return $this->sendResponse($response['status'], $response['message'], new ArticleResource($response['data']));
     }
 
     /**
@@ -362,16 +320,12 @@ class ArticleController extends Controller
  * )
  */
 
-    public function show(string $id)
-    {
-        try{
-            $article = Article::findOrFail($id);
-            return new ArticleResource($article);
-        }catch(ModelNotFoundException $e){
-            return $this->sendResponse(404, "Article not found");
-        }
-        
-    }
+ public function show(string $id)
+ {
+    $response = $this->articleService->getArticleById($id);
+    return new ArticleResource($response['data']);
+ }
+ 
 
     /**
  * @OA\Put(
@@ -455,21 +409,12 @@ class ArticleController extends Controller
  * )
  */
 
-    public function update(Request $request, string $id)
-    {
-        $request->validate([
-            'libelle' => 'sometimes|required|string|max:100',
-            'prixUnitaire' => 'sometimes|required|integer',
-            'qteStock' => 'sometimes|required|integer',
-        ]);
-        try{
-            $article = Article::findOrFail($id);
-            $article->update($request->all());
-            return $this->sendResponse(200,'Article modifié avec succès', new ArticleResource($article));
-        }catch(ModelNotFoundException $e){
-            return $this->sendResponse(404,'Article not found');
-        }
-    }
+ public function update(Request $request, string $id)
+ {
+    $response = $this->articleService->updateArticle($id, $request->all());
+    return new ArticleResource($response['data']);
+ }
+ 
 /**
  * @OA\Delete(
  *     path="/articles/{id}",
@@ -522,17 +467,12 @@ class ArticleController extends Controller
  */
 
     
-    public function destroy(string $id)
-{
-    try {
-        $article = Article::findOrFail($id);
-        $article->delete(); 
-        return $this->sendResponse(200, 'Article supprimé avec succès');
-    } catch (ModelNotFoundException $e) {
-        return $this->sendResponse(404, "Article non trouvé");
-    }
-}
-
+ public function destroy(string $id)
+ {
+    $response = $this->articleService->deleteArticle($id);
+    return $response;
+ }
+ 
 
 /**
  * @OA\Post(
@@ -603,35 +543,24 @@ class ArticleController extends Controller
  */
 
 
-    public function addStockArticle(Request $request)
-    {
-         $request->validate([
-            'articles' => 'required|array',
-            'articles.*.id' => 'required|integer',
-            'articles.*.qteStock' => 'required|integer|min:1',
-        ]);
-    
-        $updatedArticle = [];
-        $incorrectArticles = [];
-    
-        foreach ($request->articles as $article) {
-            $articleModel = Article::find($article['id']);
-    
-            if ($articleModel) {
-                $articleModel->qteStock += $article['qteStock'];
-                $articleModel->save();
-                $updatedArticle[] = new ArticleResource($articleModel);
-            } else {
-                 $incorrectArticles[] = $article;
-            }
-        }
-    
-        if (!empty($incorrectArticles)) {
-            return $this->sendResponse(400, 'Certains articles sont incorrects.', ['incorrect_articles' => $incorrectArticles]);
-        }
-    
-         return $this->sendResponse(200, 'Stock ajouté avec succès', null);
-    }
+ public function addStockArticle(Request $request)
+ {
+     $request->validate([
+         'articles' => 'required|array',
+         'articles.*.id' => 'required|integer',
+         'articles.*.qteStock' => 'required|integer|min:1',
+     ]);
+         $response = $this->articleService->addStockArticle($request->all());
+ 
+         return response()->json([
+             'message' => $response['message'],
+             'data' => $response['data']
+         ], $response['status']);
+    } 
+
+
+
+
 
 
     /**
@@ -685,18 +614,23 @@ class ArticleController extends Controller
  * )
  */
 
+
+
+
     public function restore(string $id)
-{
-    $article = Article::onlyTrashed()->find($id);
-
-    if ($article) {
-        $article->restore();
-        return $this->sendResponse(200, 'Article restauré avec succès');
+    {
+        $article = Article::onlyTrashed()->find($id);
+    
+        if ($article) {
+            $article->restore();
+            return $this->sendResponse(200, 'Article restauré avec succès');
+        }
+    
+        return $this->sendResponse(404, 'Article non trouvé');
     }
-
-    return $this->sendResponse(404, 'Article non trouvé');
-}
+ }
+ 
 
     
 
-}
+
