@@ -30,8 +30,7 @@ class ClientRepositoryImp implements ClientRepository{
     }
 
     public function delete(string $id){
-        $client = Client::find($id);
-        return $client->delete();
+        return Client::destroy($id);
     }
 
     public function findByTelephone($telephone){

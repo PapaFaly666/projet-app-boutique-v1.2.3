@@ -10,4 +10,8 @@ interface ClientService{
     public function deleteClient(string $id);
 
     public function findByTelephoneClient($telephone);
+
+    public function listerDettes(string $id);
+
+    public function afficherCompteUser(string $id);
 }

@@ -3,7 +3,9 @@ namespace App\Services;
 
 use App\Exceptions\ClientNotFoundException;
 use App\Exceptions\ClientRepositoryException;
+use App\Exceptions\ClientServiceException;
 use App\Facades\ClientRepositoryFacade as ClientRepository;
+use App\Http\Resources\ClientResource;
 use App\Mail\ClientQRCodeMail;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -52,9 +54,18 @@ class ClientServiceImpl implements ClientService{
         return ClientRepository::update($id, $data);
     }
 
-    public function deleteClient(string $id){
-        return ClientRepository::delete($id);
+    public function deleteClient(string $id)
+{
+    $client = ClientRepository::getById($id);
+    
+    if (!$client) {
+        throw new ClientRepositoryException("Client not found");
     }
+    ClientRepository::delete($id);    
+    return $client;
+}
+
+
 
     public function findByTelephoneClient($telephone)
     {
@@ -66,4 +77,43 @@ class ClientServiceImpl implements ClientService{
         }
         return $client;
     }
+
+    public function listerDettes($id)
+    {
+        $client = Client::with('dettes')->find($id);
+
+        if (!$client) {
+            throw new ClientServiceException("Client non trouvé.", false, null);
+        }
+
+        if ($client->dettes->isEmpty()) {
+            throw new ClientServiceException('Client trouvé, aucune dette.', true, null);
+        }
+
+        return [
+            'client' => new ClientResource($client),
+            'dettes' => $client->dettes,
+        ];
+    }
+
+    public function afficherCompteUser($clientId)
+    {
+        // Récupérer le client
+        $client = Client::find($clientId);
+    
+        if (!$client || !$client->user) {
+            throw new ClientServiceException("Client non trouvé.", false, null);
+        }
+    
+        // Vérifier si l'utilisateur associé au client existe
+        if (!$client->user) {
+            throw new ClientServiceException("Utilisateur non trouvé pour ce client.", false, null);
+        }
+    
+        // Retourner les informations de l'utilisateur
+        return $client->user;
+    }
+    
+
+    
 }

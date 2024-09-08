@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\ClientServiceException;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
 use App\Http\Resources\ClientResource;
@@ -417,20 +418,9 @@ class ClientController extends Controller
  */
 
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(int $id)
     {
-        try {
-            $client = Client::findOrFail($id);
-
-            $client->delete();
-
-            return $this->sendResponse(200, 'Client supprimé avec succès');
-
-        } catch (ModelNotFoundException $e) {
-            return $this->sendResponse(404, 'Client non trouvé', $e->getMessage());
-        } catch (Exception $e) {
-            return $this->sendResponse(500, 'Erreur du serveur', $e->getMessage());
-        }
+        return new ClientResource(ClientService::deleteClient($id));
     }
 
 /**
@@ -493,52 +483,10 @@ class ClientController extends Controller
  *     )
  * )
  */
-
-    public function listerDettes($clientId): JsonResponse
-{
-    try {
-        // Récupérer le client avec ses dettes
-        $client = Client::with('dettes')->find($clientId);
-
-        if (!$client) {
-            return response()->json([
-                'status' => 404,
-                'message' => 'Client non trouvé.',
-                'data' => null,
-                'success' => false,
-            ], 404);
-        }
-
-        // Si le client n'a pas de dettes
-        if ($client->dettes->isEmpty()) {
-            return response()->json([
-                'status' => 200,
-                'message' => 'Client trouvé, aucune dette.',
-                'data' => null,
-                'success' => true,
-            ], 200);
-        }
-
-        // Retourner les informations du client avec ses dettes
-        return response()->json([
-            'status' => 200,
-            'message' => 'Client trouvé.',
-            'data' => [
-                'client' => new ClientResource($client),
-                'dettes' => $client->dettes,
-            ],
-            'success' => true,
-        ], 200);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 500,
-            'message' => 'Erreur du serveur.',
-            'error' => $e->getMessage(),
-            'success' => false,
-        ], 500);
+    public function listerDettes(int $id)
+    {
+        return ClientService::listerDettes($id);
     }
-}
 
 
 /**
@@ -604,25 +552,9 @@ class ClientController extends Controller
 
 
 
-public function afficherCompteUser(Request $request, $clientId): JsonResponse
+public function afficherCompteUser($clientId)
 {
-    $client = Client::find($clientId);
-
-    if (!$client || !$client->user) {
-        return response()->json([
-            'status' => 404,
-            'message' => 'Client ou utilisateur non trouvé.',
-            'data' => null,
-            'success' => false,
-        ], 404);
-    }
-
-    return response()->json([
-        'status' => 200,
-        'message' => 'Utilisateur trouvé.',
-        'data' => $client->user,
-        'success' => true,
-    ], 200);
+    return  ClientService::afficherCompteUser($clientId);
 }
 
 
