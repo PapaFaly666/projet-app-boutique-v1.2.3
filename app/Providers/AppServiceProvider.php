@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Client;
 use App\Models\User;
+use App\Observers\ClientObserver;
 use App\Observers\UserObserver;
 use App\Repository\ClientRepositoryImp;
 use App\Services\ClientServiceImpl;
@@ -29,7 +31,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Client::observe(ClientObserver::class);
 
     }
 }
