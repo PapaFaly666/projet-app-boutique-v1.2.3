@@ -3,86 +3,89 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use App\Models\User;
+use App\Services\AuthenticationServiceInterface;
 
 class AuthController extends Controller
 {
+    protected $authService;
 
-    /**
-     * @OA\Post(
-     *     path="/login",
-     *     summary="User login",
-     *     tags={"Authentication"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                 @OA\Property(property="email", type="string", format="email", example="user@example.com"),
-     *                 @OA\Property(property="password", type="string", format="password", example="P@ssword123"),
-     *                 required={"email", "password"}
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful login",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="token", type="string", example="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNTYyMzkwMjAwLCJleHBpcmF0aW9uIjoxNTYyMzkwMjAwfQ.SdX2_cQpJ2Fch1RxW0xG9A4MgDhIZJtW1glTBf2-6MI")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Invalid credentials"
-     *     )
-     * )
-     */
-    public function login(Request $request)
+    public function __construct(AuthenticationServiceInterface $authService)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
-
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
-        }
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json(['token' => $token], 200);
+        $this->authService = $authService;
     }
 
+    /**
+ * @OA\Post(
+ *     path="/login",
+ *     summary="Authenticate user and return token",
+ *     description="This endpoint allows a user to login by providing email and password. If the credentials are correct, it returns a success message along with user data.",
+ *     operationId="loginUser",
+ *     tags={"Authentication"},
+ *     
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"email", "password"},
+ *             @OA\Property(property="email", type="string", format="email", example="user@example.com"),
+ *             @OA\Property(property="password", type="string", format="password", example="password123")
+ *         )
+ *     ),
+ *     
+ *     @OA\Response(
+ *         response=200,
+ *         description="Login successful",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="Login successful"),
+ *             @OA\Property(property="user", type="object",
+ *                 @OA\Property(property="id", type="integer", example=1),
+ *                 @OA\Property(property="name", type="string", example="John Doe"),
+ *                 @OA\Property(property="email", type="string", example="user@example.com"),
+ *             )
+ *         )
+ *     ),
+ *     
+ *     @OA\Response(
+ *         response=401,
+ *         description="Invalid credentials",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="Invalid credentials")
+ *         )
+ *     ),
+ *     
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="The given data was invalid.")
+ *         )
+ *     ),
+ *     
+ *     @OA\Response(
+ *         response=500,
+ *         description="Server error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="An error occurred")
+ *         )
+ *     )
+ * )
+ */
 
 
-
-     /**
-     * @OA\Post(
-     *     path="/logout",
-     *     summary="User logout",
-     *     tags={"Authentication"},
-     *     security={{"Bearer": {}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successfully logged out",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Logged out")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthorized"
-     *     )
-     * )
-     */
-    public function logout(Request $request)
+    public function login(Request $request)
     {
-        $request->user()->tokens()->delete();
+        $credentials = $request->only('email', 'password');
+        $user = $this->authService->authenticate($credentials);
 
-        return response()->json(['message' => 'Logged out'], 200);
+        if ($user) {
+            return response()->json(['message' => 'Login successful', 'user' => $user], 200);
+        }
+
+        return response()->json(['message' => 'Invalid credentials'], 401);
+    }
+
+    public function logout()
+    {
+        $this->authService->logout();
+        return response()->json(['message' => 'Logged out successfully'], 200);
     }
 }

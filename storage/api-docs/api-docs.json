@@ -1077,8 +1077,9 @@
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "User login",
-                "operationId": "2dd578ff7aba2721293dac66833b27d1",
+                "summary": "Authenticate user and return token",
+                "description": "This endpoint allows a user to login by providing email and password. If the credentials are correct, it returns a success message along with user data.",
+                "operationId": "loginUser",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1097,7 +1098,7 @@
                                     "password": {
                                         "type": "string",
                                         "format": "password",
-                                        "example": "P@ssword123"
+                                        "example": "password123"
                                     }
                                 },
                                 "type": "object"
@@ -1107,44 +1108,31 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Successful login",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "token": {
-                                            "type": "string",
-                                            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNTYyMzkwMjAwLCJleHBpcmF0aW9uIjoxNTYyMzkwMjAwfQ.SdX2_cQpJ2Fch1RxW0xG9A4MgDhIZJtW1glTBf2-6MI"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid credentials"
-                    }
-                }
-            }
-        },
-        "/logout": {
-            "post": {
-                "tags": [
-                    "Authentication"
-                ],
-                "summary": "User logout",
-                "operationId": "68a6108af04af5e3bc1ea68a6c6f1299",
-                "responses": {
-                    "200": {
-                        "description": "Successfully logged out",
+                        "description": "Login successful",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Logged out"
+                                            "example": "Login successful"
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "user@example.com"
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -1153,14 +1141,54 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized"
+                        "description": "Invalid credentials",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid credentials"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "An error occurred"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
-                },
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ]
+                }
             }
         },
         "/clients": {
