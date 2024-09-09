@@ -94,6 +94,7 @@ class ClientController extends Controller
 
  public function index(Request $request)
  {
+        $this->authorize('view', Client::class);
         $filters = $request->only(['surnom', 'adresse', 'telephone', 'comptes', 'active', 'sort_by', 'sort_order']);
          
         $isFiltered = false;
@@ -230,8 +231,11 @@ class ClientController extends Controller
     
     public function show($id)
     {
-            $client = ClientService::getClientById($id);
-            return new ClientResource($client);
+        $client = ClientService::getClientById($id);
+    
+        $this->authorize('view', $client);
+        $client = ClientService::getClientById($id);
+        return new ClientResource($client);
     }
 
 
@@ -292,6 +296,7 @@ class ClientController extends Controller
 
  public function store(StoreClientRequest $request)
 {
+    $this->authorize('create', Client::class);
     $client = ClientService::createClient($request->all());
     return new ClientResource($client);
 }

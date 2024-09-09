@@ -38,11 +38,11 @@ class ClientObserver
         $user->client_id = $client->id;
         $user->save();
 
-        // Mettre à jour l'ID utilisateur dans le client
+
         $client->user_id = $user->id;
         $client->save();
 
-        // Déclencher l'événement
+
         event(new ClientCreated($client, $user, $data['users']['image'] ?? null));
     }
 }

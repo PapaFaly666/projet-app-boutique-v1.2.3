@@ -14,7 +14,7 @@ class HandleClientCreated
 {
     protected $cloudinaryService;
     protected $maxRetries = 3;
-    protected $retryDelay = 5; // seconds
+    protected $retryDelay = 5; 
 
     public function __construct(CloudinaryService $cloudinaryService)
     {
