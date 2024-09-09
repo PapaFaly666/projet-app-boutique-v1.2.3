@@ -235,6 +235,7 @@ class ClientController extends Controller
     
         $this->authorize('view', $client);
         $client = ClientService::getClientById($id);
+        
         return new ClientResource($client);
     }
 
@@ -298,6 +299,8 @@ class ClientController extends Controller
 {
     $this->authorize('create', Client::class);
     $client = ClientService::createClient($request->all());
+    
+    
     return new ClientResource($client);
 }
 

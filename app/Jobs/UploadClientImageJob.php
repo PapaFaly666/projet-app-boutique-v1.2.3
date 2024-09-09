@@ -41,7 +41,7 @@ class UploadClientImageJob implements ShouldQueue
             // Sauvegarde de l'URL de l'image dans l'utilisateur
             if ($uploadedImage) {
                 $this->user->image_url = $uploadedImage;
-                $this->user->save();
+                $this->user->save(); 
             }
         } catch (Exception $e) {
             // En cas d'échec, Laravel gère les tentatives automatiques selon les paramètres définis
