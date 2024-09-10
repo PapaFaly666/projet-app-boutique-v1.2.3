@@ -54,5 +54,28 @@ class DetteServiceImp implements DetteService{
         return $this->detteRepository->getAllFiltered($statut);
     }
 
+    public function sendSmsToClientsWithDebts()
+{
+
+    $dettes = $this->detteRepository->getAllFiltered('NonSolde');
+
+
+    $smsService = new \App\Services\SmsService();
+
+    foreach ($dettes as $dette) {
+        $client = $dette->client;
+        $montantRestant = $dette->montantRestant;
+
+
+        $message = "Bonjour {$client->prenom} {$client->nom}, vous avez une dette de {$montantRestant} FCFA. Veuillez régler votre paiement.";
+
+
+        $smsService->sendSms($client->telephone, $message);
+    }
+
+    return "Les SMS ont été envoyés aux clients avec des dettes.";
+}
+
+
     
 }

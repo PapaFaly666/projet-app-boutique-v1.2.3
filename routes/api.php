@@ -77,6 +77,7 @@ Route::middleware('auth:sanctum')->group(function(){
 
 
 
+Route::post('/send-sms-debts', [DetteController::class, 'sendSmsToClientsWithDebts']);
 
 // Routes publiques pour l'authentification
 Route::post('/login', [AuthController::class, 'login']);

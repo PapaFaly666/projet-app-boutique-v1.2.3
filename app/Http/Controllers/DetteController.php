@@ -163,6 +163,23 @@ class DetteController extends Controller
         }
     }
 
+    public function sendSmsToClientsWithDebts()
+{
+    try {
+        $result = $this->detteService->sendSmsToClientsWithDebts();
+        return response()->json([
+            'status' => 200,
+            'message' => $result
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 500,
+            'message' => 'Une erreur est survenue lors de l\'envoi des SMS : ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+
     /**
      * Remove the specified resource from storage.
      */
