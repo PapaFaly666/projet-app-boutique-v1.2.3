@@ -3,6 +3,7 @@
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\DetteController;
 use App\Http\Controllers\UserController;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -64,6 +65,14 @@ Route::middleware('auth:sanctum')->group(function(){
     //Route::patch('/articles/{id}',[ArticleController::class, 'getByLibelle']);
 });
 
+
+Route::middleware('auth:sanctum')->group(function(){
+    Route::apiResource('dettes', DetteController::class);
+    Route::get('/dettes/{id}/paiements', [DetteController::class, 'getPaiements']);
+    Route::post('/dettes/{id}/paiements', [DetteController::class, 'addPaiement']);
+    Route::get('/dettes/{id}/articles', [DetteController::class, 'getArticles']);
+    Route::get('/dettes/{id}/paiements', [DetteController::class, 'getPaiements']);
+});
 
 
 

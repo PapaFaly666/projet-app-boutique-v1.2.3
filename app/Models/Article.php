@@ -20,7 +20,13 @@ class Article extends Model
         } elseif ($disponible === 'non') {
             return $query->where('qteStock', '=', 0);  
         }
-
         return $query;  
+    }
+
+    public function dettes(){
+        return $this->belongsToMany(Dette::class,'article_dette')
+            ->withPivot('quantite')
+            ->withPivot('prix')
+            ->withTimestamps();
     }
 }
